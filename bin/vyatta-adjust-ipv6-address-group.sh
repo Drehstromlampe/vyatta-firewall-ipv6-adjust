@@ -14,33 +14,53 @@ CMD_WRAPPER="/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper"
 
 # expect the first argument to this script point to a configuration file
 # that provides necessary parameters
+
 if [[ -z "$1" ]]; then
-    echo "first argument must point to configuration file to load"
+    echo "first argument must be address-group-name"
     exit $EXIT_COMMAND_USAGE_ERROR
+else
+    TMPFILE_NAME="$1"
 fi
-config="$1"
 
-mkdir -vp "$tmpdir"
+if [[ -z "$1" ]]; then
+    echo "first argument must be address-group-name"
+    exit $EXIT_COMMAND_USAGE_ERROR
+else
+    IPV6_ADDRESS_GROUP_NAME="$2"
+fi
 
-# use the configurations name within the tmpfile.
-# If anyone would like to call this script with different configurations
-# we must differentiate between them.
-tmpfile="$tmpdir/$(basename "$config").txt"
+if [[ -z "$2" ]]; then
+    echo "second argument must be an interface name"
+    exit $EXIT_COMMAND_USAGE_ERROR
+else
+    INTERFACE="$3"
+fi
+
+
+if [[ -z "$3" ]]; then
+    echo "third argumenet must be the IPv6 host-identifier"
+    exit $EXIT_COMMAND_USAGE_ERROR
+else
+    INTERFACE_IDENTIFIER_HOST="$4"
+fi
 
 check_prerequesites() {
-    # check if the required configuration file is present and the variables
-    # are set.
-    if [[ -f "$config" ]]; then
-        # shellcheck disable=SC1090
-        source "$config"
-    else
-        echo "config file missing or not a file: $config"
-        exit $EXIT_GENERAL_ERROR
+if [[ $(echo "$TMPFILE_NAME" | grep -oE '[[:print:]]+') != "$TMPFILE_NAME" ]]; then
+        echo "invalid interface: $TMPFILE_NAME"
+        exit 1
     fi
-
-    if [[ -z $INTERFACE ]]; then echo "INTERFACE not set, missing in config?"; exit 1; fi
-    if [[ -z $INTERFACE_IDENTIFIER_HOST ]]; then echo "INTERFACE_IDENTIFIER_HOST not set, missing in config?"; exit 1; fi
-    if [[ -z $IPV6_ADDRESS_GROUP_NAME ]]; then echo "IPV6_ADDRESS_GROUP_NAME not set, missing in config?"; exit 1; fi
+    if [[ $(echo "$IPV6_ADDRESS_GROUP_NAME" | grep -oE '[[:print:]]+') != "$IPV6_ADDRESS_GROUP_NAME" ]]; then
+        echo "invalid interface: $IPV6_ADDRESS_GROUP_NAME"
+        exit 1
+    fi
+    if [[ $(echo "$INTERFACE" | grep -oE '[[:print:]]+') != "$INTERFACE" ]]; then
+        echo "invalid interface: $INTERFACE"
+        exit 1
+    fi
+    if [[ $(echo "$INTERFACE_IDENTIFIER_HOST" | grep -oE '[[:xdigit:]:]+') != "$INTERFACE_IDENTIFIER_HOST" ]]; then
+        echo "invalid interface: $INTERFACE_IDENTIFIER_HOST"
+        exit 1
+    fi
 }
 
 determine_ip() {
@@ -79,8 +99,12 @@ exec_vyatta_config() {
 
 
 check_prerequesites
-# shellcheck disable=SC1090
-source "$config"
+
+mkdir -vp "$tmpdir"
+# use the configurations name within the tmpfile.
+# If anyone would like to call this script with different configurations
+# we must differentiate between them.
+tmpfile="$tmpdir/${TMPFILE_NAME}.txt"
 
 address_old="$(<"$tmpfile")"
 address_new="$(determine_ip "$INTERFACE" "$INTERFACE_IDENTIFIER_HOST")"

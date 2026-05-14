@@ -31,25 +31,11 @@ The script is configurable via a sourcable configuration file. The configuration
 - the host-part (IPv6 interface identifier) of the address of your server
 - the name of the `ipv6-address-group` that must be updated.
 
-## Create a configuration file
-
-Example configuration:
-
-```
-INTERFACE=switch0.11
-INTERFACE_IDENTIFIER_HOST=5054:ff:fe55:5555
-IPV6_ADDRESS_GROUP_NAME=gitlab-pub
-```
-
 ## Copy over the script
 
 Copy the script to your router using scp, e.g. to `/opt/vyatta-firewall-ipv6-adjust`.
+Copying will have to be done indirectly. Copying to `/opt` requires root privileges.
 
-## Copy the configuration to the router
-
-Create a directory on the target for storing the configuraiton, e.g. `/etc/vyatta-ipv6-address-group-adjust.d`
-
-Copy your configuration file to this directory.
 
 ## setting up the timer
 
@@ -57,7 +43,7 @@ You do not need to define a cronjob by hand. The Edgerouter/vyatta allows you to
 Tree or the command line.
 
 ```
-set system task-scheduler task gitlab-ipv6-update executable arguments /etc/vyatta-ipv6-address-group-adjust.d/gitlab
+set system task-scheduler task gitlab-ipv6-update executable arguments gitlab gitlab-pub switch0.11 5054:ff:feff:ffff
 set system task-scheduler task gitlab-ipv6-update executable path /opt/vyatta-firewall-ipv6-adjust/vyatta-adjust-ipv6-address-group.sh
 set system task-scheduler task gitlab-ipv6-update interval 5m
 ```
